@@ -1,0 +1,57 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH ShutdownWatcher 1  "Dec 9,2023"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7) and groff_man(7)
+.\" .SH        section heading
+.\" .SS        secondary section heading
+.\"
+.\"
+.\" To preview this page as plain text: nroff -man ipython.1
+.\"
+.SH NAME
+ShutdownWatcher \- Watch for shutdown signal from a GPIO pin.
+
+.SH SYNOPSIS
+.B ShutdownWatcher
+.RI [ gpionum ] 
+
+gpionum (optional) is the number of the GPIO pin to monitor. The default (if ommitted) is GPIO pin 18.
+
+.SH DESCRIPTION
+This provides a 'clean' shutdown for a headless raspberry pi.
+.br
+It runs as a service under systemd.
+.
+The program monitors monitors a GPIO pin on the Raspbery pi, which is
+pulled hi via an internal 50k resistor.
+When the pin is brought low, the program runs the 'shutdown -h now' command.
+.sp
+This provides a simple, single button method of shutting down a 'headless'
+Raspbery pi.
+.sp
+It is recommended that a
+the switch connect thru a low-value (e.g.: 200-500 ohm) resistor to
+ground to protect against excessive current in case of a mis-wire.
+
+.SH FILES
+.br
+The binary is in /usr/local/bin.
+.br
+The program is a 'systemd' service whose definition is in /etc/systemd/system.
+.br
+The man page is in /usr/share/nan/man1
+.SH AUTHORS
+ShutdownWatcher was Written by Doug Fajardo Nov, 2023.

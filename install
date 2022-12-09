@@ -6,13 +6,14 @@
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
 SYSTEMD=/etc/systemd/system/
-RM='rm -rf'
 
-# Copy the man page
-${RM} ${MANPAGES}/ShutdownWatcher.1 
-
+# Copy the man page and update the database
+echo "installing man page"
+cp ShutdownWatcher.1 ${MANPAGES}
+mandb -q
+echo "Installing binary and systemd control file"
 # Copy the binary
-${RM} ${BINDIR}ShutdownWatcher
+cp build/ShutdownWatcher ${BINDIR}
 # Copy the systemd config file
-${RM} ${SYSTEMD}/ShutdownWatcher.service
-
+cp ShutdownWatcher.sevice ${SYSTEMD}
+echo "Install complete"

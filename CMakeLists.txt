@@ -4,6 +4,4 @@ project (ShutdownWatcher)
 set(CMAKE_BUILD_TYPE Debug)
 add_executable(ShutdownWatcher ShutdownWatcher.cpp)
 target_link_libraries(ShutdownWatcher wiringPi)
-install(TARGETS ShutdownWatcher
-  RUNTIME DESTINATION /usr/local/bin)
 
