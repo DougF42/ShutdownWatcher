@@ -1,0 +1,10 @@
+[Unit]
+Description=Shutdown control watcher
+After=network.target
+Before=nextcloud-web.service
+
+[Service]
+ExecStart=/usr/local/bin/shutdownwatcher 18
+ExecReload=/usr/local/bin/shutdownwatcher
+Type=simple
+Restart=always

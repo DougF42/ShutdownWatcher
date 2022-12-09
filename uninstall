@@ -1,0 +1,3 @@
+#!bin/bash
+# this must be run from the 'build' directory
+rgs rm -f <install_manifest.txt
