@@ -9,10 +9,19 @@ SYSTEMD=/etc/systemd/system/
 RM='rm -rf'
 
 # Copy the man page
-${RM} ${MANPAGES}/ShutdownWatcher.1 
+if [ -f ${MANPAGES}/ShutdownWatcher.1 ]; then
 
-# Copy the binary
+echo "Removing man page"
+${RM} ${MANPAGES}/ShutdownWatcher.1
+mandb -q
+else
+echo "Man pages Already deleted"
+fi
+
+# remove the binary
+echo "Removing binary and service file"
 ${RM} ${BINDIR}ShutdownWatcher
-# Copy the systemd config file
+# remove the systemd config file
 ${RM} ${SYSTEMD}/ShutdownWatcher.service
+echo "uninstall complete"
 

@@ -12,46 +12,46 @@
 #include <unistd.h>
 #include <wiringPi.h>
 
-// #define TEST_NOW
+
+//IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
 
-// Pick a switch (GPIO Number)
-#define SWITCH 14
+// default GPIO pin
+#define DEF_SWITCH 14
+#define DOSHUTDOWN 0
 
 using namespace std;
-
-static bool startShutdown=false;
 
 /**
  * This calls shutdown with the '-h now; argument.
  */
 void callShutdown(void)
 {
-  startShutdown=true;
+  #ifdef TESTMODE
+  printf("TEST MODE: Shutdown triggered\n");
+  #else
   int stat=system("shutdown -h now");
+  #endif
+  exit(0);
 }
 
 int main(int argc, char **argv) {
-	printf( "Hello world\n");
-
-	#ifdef TEST_NOW
-	callShutdown();
-	exit(0);
-	#else
+  int switchno = DEF_SWITCH;
+  //	printf( "Hello world\n");
 
 	wiringPiSetupGpio();   // Use broadcom GPIO pin numbers
-	pinMode(SWITCH, INPUT);  // set switch to input mode
-	pullUpDnControl (SWITCH, PUD_UP) ; // set Pull-up 50k resistor
+	pinMode(switchno, INPUT);  // set switch to input mode
+	pullUpDnControl (switchno, PUD_UP) ; // set Pull-up 50k resistor
 #ifdef USE_INTERRUPT
-	wiringPiISR(SWITCH, INT_EDGE_FALLING, callShutdown);
+	wiringPiISR(switchno, INT_EDGE_FALLING, callShutdown);
 	while(1)
 	  {
-	    sleep(5); // wait for interrupt
+	    sleep(100); // wait for interrupt
 	  }
 #else
 	while(1)
 	{
-		if (0 == digitalRead(SWITCH))
+		if (0 == digitalRead(switchno))
 		{
 			callShutdown();
 			exit(0);
@@ -60,6 +60,5 @@ int main(int argc, char **argv) {
 
 	}
 #endif
-	#endif
 	return 0;
 }
