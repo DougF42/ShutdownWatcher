@@ -37,7 +37,7 @@ void callShutdown(void)
 
 int main(int argc, char **argv) {
   int switchno = DEF_SWITCH;
-  	printf( "Hello world\n");
+//  	printf( "Hello world\n");
 
 	wiringPiSetupGpio();   // Use broadcom GPIO pin numbers
 	pinMode(switchno, INPUT);  // set switch to input mode

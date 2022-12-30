@@ -21,12 +21,12 @@ cd ..
 
 # Copy the man page and update the database
 echo "installing man page"
-cp ShutdownWatcher.1 ${MANPAGES}
+cp shutdownwatcher.1 ${MANPAGES}
 mandb -q
 
 echo "Installing binary"
 # Copy the binary
-cp build/ShutdownWatcher ${BINDIR}
+cp build/shutdownwatcher ${BINDIR}
 
 echo "Installing systemd control file to ${SYSTEMD}"
 
@@ -36,3 +36,6 @@ cp shutdownwatcher.service ${SYSTEMD}/
 echo "Install complete"
 
 # Starting the watcher service
+systemctl daemon-reload
+systemctl enable shutdownwatcher.service
+
