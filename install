@@ -7,13 +7,32 @@ BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
 SYSTEMD=/etc/systemd/system/
 
+if [ ! -d build ]; then
+    echo "This script MUST be run from the 'shutdownWatcher' program directory"
+    exit 1
+fi
+
+cd build && cmake .. && make
+if [ $? -ne 0 ]; then
+    echo "Bad return from build. Install aborted."
+fi
+
+cd ..
+
 # Copy the man page and update the database
 echo "installing man page"
 cp ShutdownWatcher.1 ${MANPAGES}
 mandb -q
-echo "Installing binary and systemd control file"
+
+echo "Installing binary"
 # Copy the binary
 cp build/ShutdownWatcher ${BINDIR}
+
+echo "Installing systemd control file to ${SYSTEMD}"
+
 # Copy the systemd config file
-cp ShutdownWatcher.sevice ${SYSTEMD}
+cp shutdownwatcher.service ${SYSTEMD}/
+
 echo "Install complete"
+
+# Starting the watcher service

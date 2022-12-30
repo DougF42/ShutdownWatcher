@@ -1,0 +1,11 @@
+[Unit]
+Description=Shutdown button watching pin 14.
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/ShutdownWatcher
+Type=simple
+Restart=always
+
+[install]
+WantedBy=multi-user.target
