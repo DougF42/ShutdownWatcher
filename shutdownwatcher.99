@@ -1,0 +1,54 @@
+#!/bin/sh
+# Start/stop the cron daemon.
+#
+### BEGIN INIT INFO
+# Provides:          shutdownwatcher
+# Required-Start:    $syslog
+# Required-Stop:     $syslog 
+# Should-Start:
+# Should-Stop:
+# Default-Start:     3 4 5
+# Default-Stop:      1 2
+# Short-Description: shutdownwatcher shuts the system if a button is pressed
+# Description:       shutdownwatcher monitors a GPIO pin, and shuts the system
+#                    down if it is pressed.
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DESC="shutdown watcher daemon"
+NAME=shutdownwatcher
+DAEMON=/usr/local/bin/shutdownwatcher
+PIDFILE=/var/run/shutdownwatcher.pid
+SCRIPTNAME=/etc/init.d/"$NAME"
+
+test -f $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+start)	log_daemon_msg "Starting shutdown watcher "
+        start_daemon -p $PIDFILE $DAEMON $EXTRA_OPTS
+        log_end_msg $?
+	;;
+stop)	log_daemon_msg "Stopping shutdown watcher "cron"
+        killproc -p $PIDFILE $DAEMON
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && [ -e "$PIDFILE" ] && rm -f $PIDFILE
+        log_end_msg $RETVAL
+        ;;
+restart) log_daemon_msg "Restarting shutdown watcher "cron" 
+        $0 stop
+        $0 start
+        ;;
+reload|force-reload) log_daemon_msg "Reloading configuration files - ignored (no config files for shutdown watcher"
+	# cron reloads automatically
+        log_end_msg 0
+        ;;
+status)
+        status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+        ;;
+*)	log_action_msg "Usage: /etc/init.d/cron {start|stop|status|restart|reload|force-reload}"
+        exit 2
+        ;;
+esac
+exit 0

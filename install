@@ -5,7 +5,7 @@
 #
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
-SYSTEMD=/etc/systemd/system/
+SYSTEMD=/etc/init.d
 
 if [ ! -d build ]; then
     echo "This script MUST be run from the 'shutdownWatcher' program directory"
@@ -28,14 +28,10 @@ echo "Installing binary"
 # Copy the binary
 cp build/shutdownwatcher ${BINDIR}
 
-echo "Installing systemd control file to ${SYSTEMD}"
-
 # Copy the systemd config file
-cp shutdownwatcher.service ${SYSTEMD}/
-
+#cp shutdownwatcher.service ${SYSTEMD}/
+echo installing system control files
+cp shutdownwatcher.99 /etc/init.d/shutdownwatcher
+update-rc.d shutdownwatcher  defaults
+update-rc.d shutdownwatcher  defaults-disabled
 echo "Install complete"
-
-# Starting the watcher service
-systemctl daemon-reload
-systemctl enable shutdownwatcher.service
-

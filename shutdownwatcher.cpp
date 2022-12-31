@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <syslog.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <wiringPi.h>
@@ -15,10 +16,10 @@
 
 //IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
-#define TESTMODE
+// #define TESTMODE
+
 // default GPIO pin
 #define DEF_SWITCH 14
-#define DOSHUTDOWN 0
 
 using namespace std;
 
@@ -28,8 +29,9 @@ using namespace std;
 void callShutdown(void)
 {
   #ifdef TESTMODE
-  printf("TEST MODE: Shutdown triggered\n");
+  syslog(LOG_DAEMON|LOG_EMERG, "TEST MODE: Shutdown triggered");
   #else
+  syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
   int stat=system("shutdown -h now");
   #endif
   exit(0);
@@ -37,11 +39,12 @@ void callShutdown(void)
 
 int main(int argc, char **argv) {
   int switchno = DEF_SWITCH;
-//  	printf( "Hello world\n");
-
+//  	printf( "Hello world");
+  syslog(LOG_DAEMON|LOG_EMERG, "Power button watcher started");
 	wiringPiSetupGpio();   // Use broadcom GPIO pin numbers
 	pinMode(switchno, INPUT);  // set switch to input mode
 	pullUpDnControl (switchno, PUD_UP) ; // set Pull-up 50k resistor
+	syslog(LOG_DAEMON|LOG_EMERG, "GPIO configured");
 #ifdef USE_INTERRUPT
 	wiringPiISR(switchno, INT_EDGE_FALLING, callShutdown);
 	while(1)
