@@ -19,7 +19,8 @@
 // #define TESTMODE
 
 // default GPIO pin
-#define DEF_SWITCH 14
+//#define DEF_SWITCH 14
+#define DEF_SWITCH 18
 
 using namespace std;
 
