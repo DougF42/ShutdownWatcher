@@ -25,6 +25,9 @@ The first argument is the switch's GPIO number. Default is 18.
   '/usr/local/bin/ShutdownWatcher&'
   
 ## Required:
+   cmake (apt-get install cmake)
+   cmake-curses-gui (apt-get install cmake-curses-gui)
+   
    Download WiringPi and install it:
 
     (1) wget https://project-downloads.drogon.net/wiringpi-latest.deb
