@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <wiringPi.h>
 #include <regex.h>
-
+#include "parseconfig.h"
 
 // IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
