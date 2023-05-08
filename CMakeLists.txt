@@ -1,7 +1,7 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.0)
 
-project (shutdownwatcher)
+project (testParser)
 set(CMAKE_BUILD_TYPE Debug)
-add_executable(shutdownwatcher shutdownwatcher.cpp parse_cfg.cpp)
-target_link_libraries(shutdownwatcher wiringPi)
+add_executable(testParser testParser.cpp parse_cfg.cpp)
+#  target_link_libraries(shutdownwatcher wiringPi)
 

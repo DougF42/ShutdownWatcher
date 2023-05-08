@@ -12,18 +12,19 @@
 #include <string>
 #ifndef P_A_R_S_E__C_F_G
 #define P_A_R_S_E__C_F_G
+using namespace std;
 
 class parseConfig{
  private:
   int config_shutdownPin;    // What pin to trigger shutdown?
   int config_uartPin;        // what pin to configure uart/spi mode for qca7000
   int config_ledPin;         // What pin for heartbeat?
-  int config_hearbeat_rate;  // How long (msecs) per pulse? will use 50% duty cycle.
+  int config_heartbeat_rate;  // How long (msecs) per pulse? will use 50% duty cycle.
   string config_file_name;   // Name of the config.txt file.
   
  public:
-  parseLine();
-  ~parseLine();
+  parseConfig();
+  ~parseConfig();
   void begin(string configFileName);
   std::string ltrim(const std::string &s);
   std::string rtrim(const std::string &s);
@@ -34,4 +35,6 @@ class parseConfig{
   int uartPin();
   int heartbeatPin();
   int hearbeatRate();
+  string configtxt_name();
 };
+#endif
