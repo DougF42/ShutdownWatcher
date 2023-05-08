@@ -1,18 +1,20 @@
 # Shutdown watcher
-## General
-This does an auto-shutdown if a button is pressed.
-it USES the wiringpi (see _required_ below) library Interrupt functions.
+# # General
+This program has 3 purposes:
+* This does an auto-shutdown if a button is pressed (GPIO 11).
+* This looks at GPIO pin x when the program, and configureds the PI for either UART or SPI operation.
+* This provides a heartbeat on an output pin (
 
-## Notes:
+# # Notes:
 TEMP and voltage MONITOR: vcgencmd.
 git clone https://github.com/raspberrypi/userland.git	
 cd userland
 ./buildme --aarch64
 
-## SWITCH:
-SWITCH connection:  Normally open, ground thru a 1k resistor. The processor
+# # SWITCH:
+SWITCH connection:  Normally open, pull up? thru a 1k resistor. The processor
 is programmed with an internal pull up resistor.
-The first argument is the switch's GPIO number. Default is 18.
+The first argument is the switch's GPIO number. Default is 11.
 
 ## Logic/operation:
   Sets the SWITCH pin to input, pulled high with internal pull-up resistor.
