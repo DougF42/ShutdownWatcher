@@ -1,7 +1,8 @@
 # This is a test configuration file
+#SHUTDOWN = 66
 SHUTDOWN = 11
-UARTPIN  = 12
-LEDPIN   = 13
+UARTPIN  = 12 # oopsy
+LEDPIN   = 13  ;another test
 CONFIGFILE="testConfig.txt"
 HEARTBEAT = 50
 ; end of file

@@ -14,7 +14,7 @@
 #define P_A_R_S_E__C_F_G
 using namespace std;
 
-class parseConfig{
+class parseDefaults{
  private:
   //  static const std::string WHITESPACE;
   int config_shutdownPin;    // What pin to trigger shutdown?
@@ -26,9 +26,9 @@ class parseConfig{
   void setValues(const string pname, const string value, int lineno);
   
  public:
-  parseConfig();
-  ~parseConfig();
-  void begin(const string &configFileName);
+  parseDefaults();
+  ~parseDefaults();
+  void begin(const string &defaultFileName);
   std::string ltrim(const std::string &s);
   std::string rtrim(const std::string &s);
   std::string trim(const std::string &s);

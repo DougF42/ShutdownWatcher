@@ -1,23 +1,24 @@
 /**
- * This parses the config file, located in /etc/default, and sets the resulting configuration
- * into static, internal variables.
+ * This parses the defaults file, (normally located in /etc/default/shutdownwatcher), and sets the 
+ * resulting configuration into static, internal variables.
  *
- * The config file is formatted as follows:
+ * The defaults file is formatted as follows:
  *
  *   A '#' or ';' designates a comment until end-of-line
  * Blank lines, or lines onlY containing comments are ignored.
  *
- * paramters are formated as <varName>=value.
+ * paramters are formated as <varName>=<value>
  *      <varName> is case-sensitive, letters followed by letters and numbers
  *      <value>   any comgbination of printable characters. 
  *  Leading and trailing spaces are ignored
  */
 #include <string>
+#include <string.h>
 #include <syslog.h>
 #include <regex.h>
 #include <stdio.h>
 #include <errno.h>
-#include "parseconfig.h"
+#include "parseDefaults.h"
 
 #define NOT_A_PI
 
@@ -44,7 +45,7 @@ static const char *WHITESPACE = " \n\r\t\f\v";
 /**
  * @brief initialize defaults
  */
-parseConfig::parseConfig()
+parseDefaults::parseDefaults()
 {
   config_shutdownPin     = DEFAULT_SHUTDOWN_PIN;
   config_uartPin          = DEFAULT_CONFIG_UART_PIN;
@@ -57,24 +58,24 @@ parseConfig::parseConfig()
 /**
  * @brief Standard destructor
  */
-parseConfig::~parseConfig()
+parseDefaults::~parseDefaults()
 {
 }
 
 
-std::string parseConfig::ltrim(const std::string &s)
+std::string parseDefaults::ltrim(const std::string &s)
 {
   size_t start = s.find_first_not_of(WHITESPACE);
   return (start == std::string::npos) ? "" : s.substr(start);
 }
  
-std::string parseConfig::rtrim(const std::string &s)
+std::string parseDefaults::rtrim(const std::string &s)
 {
   size_t end = s.find_last_not_of(WHITESPACE);
   return (end == std::string::npos) ? "" : s.substr(0, end + 1);
 }
  
-std::string parseConfig::trim(const std::string &s) {
+std::string parseDefaults::trim(const std::string &s) {
   return rtrim(ltrim(s));
 }
 
@@ -101,7 +102,7 @@ static int CONVNUM(const string _val, const string &_pname, int &_lineno)
  * @param value - value for that paramter
  * @param lineno - the line number in the config file. Used for error msgs.
  */
-void parseConfig::setValues(const string pname, const string value, int lineno)
+void parseDefaults::setValues(const string pname, const string value, int lineno)
 {
  
   int res;
@@ -136,74 +137,101 @@ void parseConfig::setValues(const string pname, const string value, int lineno)
 }
 
 
+int parseDefaults::shutdownPin()
+{
+  return(config_shutdownPin);
+}
+
+
+int parseDefaults::uartPin()
+{
+  return( config_uartPin);
+}
+
+
+int parseDefaults::heartbeatPin()
+{
+  return( config_ledPin);
+}
+
+
+int parseDefaults::heartbeatRate()
+{
+  return(config_heartbeat_rate);
+}
+
+
+string parseDefaults::configtxt_name()
+{
+  return(config_file_name);
+}
 
   
-  /**
-   * @brief PARSE a string for <name>=<value>
+/**
+ * @brief PARSE a string for <name>=<value>
  
-   * @param line[in] - the line to parse. It is not altered.
-   * @oaram lineno   - the line number (used for error messages)
-   * @Return none
-   *
-   * NOTE: Not thread safe!
-   */
-  void parseConfig::parseALine(const string  &line, int lineno)
-  {
-    string wrkstr(line);
-    size_t pos;
+ * @param line[in] - the line to parse. It is not altered.
+ * @oaram lineno   - the line number (used for error messages)
+ * @Return none
+ *
+ * NOTE: Not thread safe!
+ */
+void parseDefaults::parseALine(const string  &line, int lineno)
+{
+  string wrkstr(line);
+  size_t pos;
   
-    string pname;
-    string arg;
+  string pname;
+  string arg;
 
   
-    // elimnate comments
-    pos=wrkstr.find_first_of("#;");
-    if (pos!= string::npos)   wrkstr.erase(pos, string::npos);
+  // elimnate comments
+  pos=wrkstr.find_first_of("#;");
+  if (pos!= string::npos)   wrkstr.erase(pos, string::npos);
   
-    // find '='
-    pos = wrkstr.find("=");
-    if (pos==string::npos)
-      {
-	printf("Did not find '='\n");
-	return;
-      }
-    pname=trim(wrkstr.substr(0, pos));
-    arg=trim(wrkstr.substr(pos+1, string::npos));
-    printf("Have name = :%s:   arg = :%s:\n", pname.c_str(), arg.c_str());
-    setValues(pname, arg, lineno);
-      }
-
-
-
-  /**
-   * @brief Parse the config file.
-   * If fname is empty, use default config file.
-   *  Default values are used if parsing fails.
-   *
-   * @fname: the name of the config file (/etc/default/shutdownwatcher)
-   * @return: true normally, false if error
-   */
-  void parseConfig::begin(const string &configFileName)
-  {
-    char workName[256];
-    FILE *infile;
-  
-    strcpy(workName, configFileName);
-    strcpy(workName,".txt");
-    
-    infile=fopen(fname, "r");
-    if (infile==NULL)
-      {
-	syslog("shutdownwatcher:Open on file %s failed: %s", name, strerror(errno));
-	return(false);
-      }
-
-    char *line=NULL;
-    size_t len = 0;
-    ssize_t nread;
-    while(nread = getline(&line, &len, infile)) != -1)
-    {
-      parseALine( (string)line);
+  // find '='
+  pos = wrkstr.find("=");
+  if (pos==string::npos)
+    { // no '='
+      return;
     }
-    return;
+  pname=trim(wrkstr.substr(0, pos));
+  arg=trim(wrkstr.substr(pos+1, string::npos));
+  printf("Have name = :%s:   arg = :%s:\n", pname.c_str(), arg.c_str());
+  setValues(pname, arg, lineno);
+}
+
+
+
+/**
+ * @brief Parse the 'defaults' file.
+ * If fname is empty, use default config file.
+ *  Default values are used if parsing fails.
+ *
+ * @fname: the name of the config file (/etc/default/shutdownwatcher)
+ * @return: true normally, false if error
+ */
+void parseDefaults::begin(const string &defaultFileName)
+{
+  FILE *defaufFile;
+    
+  defaufFile=fopen(defaultFileName.c_str(), "r");
+  if (defaufFile==NULL)
+    {
+      syslog(LOG_CONS|LOG_DAEMON,
+	     "shutdownwatcher:Open on file %s failed: %s",
+	     defaultFileName.c_str(), strerror(errno));
+      return;
+    }
+
+  char *line=NULL;
+  size_t len = 0;
+  ssize_t nread;
+  int lineno=0;
+  while( (nread = getline(&line, &len, defaufFile)) != -1)
+    {
+      lineno++;
+      parseALine( (string)line, lineno);
+    }
+  return;
 }
