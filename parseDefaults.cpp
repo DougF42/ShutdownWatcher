@@ -25,16 +25,20 @@
 using namespace std;
 
 #ifdef NOT_A_PI
-#define DEFAULT_FILE_NAME       "/etc/default/shutdownwatcher"
+#define DEFAULT_UART_FILE       "/boot/config.txt_uart"
+#define DEFAULT_SPI_FILE        "/boot/config.txt_spi"
 #define DEFAULT_CONFIG_TXT      "/boot/config.txt"
 #define DEFAULT_SHUTDOWN_PIN    17
 #define DEFAULT_CONFIG_UART_PIN 11
 #define DEFAULT_HEARTBEAT_PIN   12
 #define DEFAULT_HEARTBEAT_RATE  100
+
 #else
-#define DEFAULT_FILE_NAME       "/etc/default/shutdownwatcher"
+
+#define DEFAULT_UART_FILE       "/boot/config.txt_uart"
+#define DEFAULT_SPI_FILE        "/boot/config.txt_spi"
 #define DEFAULT_CONFIG_TXT      "/boot/config.txt"
-#define DEFAULT_SHUTDOWN_PIN GPIO17
+#define DEFAULT_SHUTDOWN_PIN    GPIO17
 #define DEFAULT_CONFIG_UART_PIN GPIO11
 #define DEFAULT_HEARTBEAT_PIN   GPIO12
 #define DEFAULT_HEARTBEAT_RATE  100
@@ -47,11 +51,13 @@ static const char *WHITESPACE = " \n\r\t\f\v";
  */
 parseDefaults::parseDefaults()
 {
-  config_shutdownPin     = DEFAULT_SHUTDOWN_PIN;
+  config_txt_uart         = DEFAULT_UART_FILE;
+  config_txt_spi          = DEFAULT_SPI_FILE;
+  config_txt_main         = DEFAULT_CONFIG_TXT;
+  config_shutdownPin      = DEFAULT_SHUTDOWN_PIN;
   config_uartPin          = DEFAULT_CONFIG_UART_PIN;
   config_ledPin           = DEFAULT_HEARTBEAT_PIN;
   config_heartbeat_rate   = DEFAULT_HEARTBEAT_RATE;
-  config_file_name        = DEFAULT_CONFIG_TXT;
 }
 
 
@@ -106,32 +112,38 @@ void parseDefaults::setValues(const string pname, const string value, int lineno
 {
  
   int res;
-  if (0 == pname.compare("HEARTBEAT"))
+  if (0 == pname.compare("CONFIGSPI"))
     {
-      config_file_name = value;
+      config_txt_spi.assign(value);
 
-    } else
-
-	if ( 0 == pname.compare("SHUTDOWN"))
-	  {
-	    res=CONVNUM(value, pname, lineno);
-	    config_shutdownPin=res;
+    } else if (0== pname.compare("CONFIGUART"))
+    {
+      config_txt_uart.assign(value);
       
-	  } else if (0 == pname.compare("UARTPIN"))
-	  {
-	    res=CONVNUM(value, pname, lineno);
-	    config_uartPin = res;
+    } else if (0 == pname.compare("CONFIGMAIN"))
+    {
+      config_txt_main.assign(value);
       
-	  } else  if (0 == pname.compare("LEDPIN"))
-	  {
-	    res=CONVNUM(value, pname, lineno);
-	    config_ledPin = res;
+    } else if ( 0 == pname.compare("SHUTDOWN"))
+    {
+      res=CONVNUM(value, pname, lineno);
+      config_shutdownPin=res;
       
-	  } else if (0 == pname.compare("HEARTBEAT"))
-	  {
-	    res=CONVNUM(value, pname, lineno);
-	    config_heartbeat_rate=res;
-	  }
+    } else if (0 == pname.compare("UARTPIN"))
+    {
+      res=CONVNUM(value, pname, lineno);
+      config_uartPin = res;
+      
+    } else  if (0 == pname.compare("LEDPIN"))
+    {
+      res=CONVNUM(value, pname, lineno);
+      config_ledPin = res;
+      
+    } else if (0 == pname.compare("HEARTBEAT"))
+    {
+      res=CONVNUM(value, pname, lineno);
+      config_heartbeat_rate=res;
+    } 
 
   return;      
 }
@@ -161,9 +173,21 @@ int parseDefaults::heartbeatRate()
 }
 
 
-string parseDefaults::configtxt_name()
+string parseDefaults::configtxt_main()
 {
-  return(config_file_name);
+  return(config_txt_main);
+}
+
+
+string parseDefaults::configtxt_uart()
+{
+  return(config_txt_uart);
+}
+
+
+string parseDefaults::configtxt_spi()
+{
+  return(config_txt_spi);
 }
 
   
@@ -197,7 +221,7 @@ void parseDefaults::parseALine(const string  &line, int lineno)
     }
   pname=trim(wrkstr.substr(0, pos));
   arg=trim(wrkstr.substr(pos+1, string::npos));
-  printf("Have name = :%s:   arg = :%s:\n", pname.c_str(), arg.c_str());
+  // printf("Have name = :%s:   arg = :%s:\n", pname.c_str(), arg.c_str());
   setValues(pname, arg, lineno);
 }
 
@@ -228,6 +252,7 @@ void parseDefaults::begin(const string &defaultFileName)
   size_t len = 0;
   ssize_t nread;
   int lineno=0;
+  
   while( (nread = getline(&line, &len, defaufFile)) != -1)
     {
       lineno++;

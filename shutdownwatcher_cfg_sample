@@ -5,7 +5,7 @@
 // default is /boot/config.txt
 CONFIGSPI="/boot/config.txt_spi"
 CONFIGUART="/boot/config.txt_uart"
-CONFIGMAIN="/boot/config.txt"
+CONFIGMAIN="/boot/config.tct"
 
 // GPIO Pin number - ground this pin to initiate a shutdown
 SHUTDOWN = 18

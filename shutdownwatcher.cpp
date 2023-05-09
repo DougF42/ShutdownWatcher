@@ -22,20 +22,13 @@
 #include <unistd.h>
 #include <wiringPi.h>
 #include <regex.h>
-#include "parseconfig.h"
+#include "parseDefaults.h"
 
 // IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
 
 // IF defined, we dont actually reboot, but instead put out a stslog message.
-// #define TESTMODE
-
-
-/**
- * This defines the switch we will monitor - we shut down when it goes low.
- */
-#define SHUTDOWN_GPIO_PIN 18
-#define PICK_UART_GPIO_PIN 25
+#define TESTMOD
 
 /**
  * Identifies wether we want UART or SPI driver
@@ -43,21 +36,7 @@
 enum QCA_MODE {QCA_UART, QCA_SPI};
 typedef enum QCA_MODE QCA_MODE_t;
 
-/**
- * These define the config file to edit, and where to build the
- * working file.
- * We copy from CONFIG_TXT to CONFIG_TXT_WRK, makeing changes only
- * if they are necessary. When we are finished, IF there were changes
- * needed, we rename the CONFIG_TXT_WRK file to CONFIG_TXT.
- *
- * If no changes, then we simply delete CONFIG_TXT_WRK.
- *
- * The DELETE_WRK_FILE macro should be defined normally; undefine it
- *   for testing.
- */
-#define CONFIG_TXT "/boot/config.txt"
-#define CONFIG_TXT_WRK "/boot/config.txt.wrk"
-#define DELETE_WRK_FILE
+
 using namespace std;
 
 

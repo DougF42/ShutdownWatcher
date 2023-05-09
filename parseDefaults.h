@@ -21,7 +21,9 @@ class parseDefaults{
   int config_uartPin;        // what pin to configure uart/spi mode for qca7000
   int config_ledPin;         // What pin for heartbeat?
   int config_heartbeat_rate;  // How long (msecs) per pulse? will use 50% duty cycle.
-  string config_file_name;   // Name of the config.txt file.
+  string config_txt_uart;   // Name of the config.txt file for UART
+  string config_txt_spi;    // Name of the config.txt file for SPI
+  string config_txt_main;   // Name of the resulting config.txt file
   
   void setValues(const string pname, const string value, int lineno);
   
@@ -38,6 +40,8 @@ class parseDefaults{
   int uartPin();
   int heartbeatPin();
   int heartbeatRate();
-  string configtxt_name();
+  string configtxt_uart();
+  string configtxt_spi();
+  string configtxt_main();
 };
 #endif

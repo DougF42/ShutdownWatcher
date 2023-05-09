@@ -6,6 +6,8 @@
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
 #SYSTEMD=/etc/systemd/system/
+
+// remove command, ignore errors, force if directory.
 RM='rm -rf'
 
 # Copy the man page
@@ -16,6 +18,8 @@ mandb -q
 else
 echo "Man pages Already deleted"
 fi
+# Remove the /etc/default/shutdown file
+${RM} /etc/default/shutdown
 
 # remove the binary
 echo "Removing binary and service file"

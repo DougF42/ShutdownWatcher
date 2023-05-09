@@ -2,8 +2,22 @@
 # # General
 This program has 3 purposes:
 * This does an auto-shutdown if a button is pressed (GPIO 11).
-* This looks at GPIO pin x when the program, and configureds the PI for either UART or SPI operation.
-* This provides a heartbeat on an output pin (
+* This looks at GPIO pin x when the program starts, and configureds the PI
+for either UART or SPI operation. This will also force a reboot.
+* This provides a heartbeat on an output pin
+
+# # default config file
+* The command line supports one argument - the name of a 'defaults' configuration
+file (do NOT confuse with the /boot/config.txt file that we may modify).
+* This file is (by default) /etc/defaults/shutdownwatcher.
+* It contains the a series of assignments in the form of:
+  `<parameter>=<value>`
+
+* It allows spaces around the '=', and before or after the value.
+* The ';' and '#' characters indicate the start of a comment,
+which always extends to the end of the current line
+
+
 
 # # Notes:
 TEMP and voltage MONITOR: vcgencmd.
