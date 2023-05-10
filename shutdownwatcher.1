@@ -26,15 +26,19 @@ ShutdownWatcher \- Watch for shutdown signal from a GPIO pin.
 
 .SH SYNOPSIS
 .B ShutdownWatcher
-.RI [ gpionum ] 
+.RI [ defaultFile ] 
 
-gpionum (optional) is the number of the GPIO pin to monitor. The default (if ommitted) is GPIO pin 18.
+.TP 5
+[defaultFile]
+The [defaultFile] argument is optional - default is /etc/defaults/shutdownwatcher. This file contains
+the default values for all settable parameters [see CONFIGURATION below]
 
 .SH DESCRIPTION
-This provides a 'clean' shutdown for a headless raspberry pi.
 .br
-It runs as a service under systemd.
-.
+It runs as a service under systemd, and provides the following services:
+
+.TP
+Auto Shutdown
 The program monitors monitors a GPIO pin on the Raspbery pi, which is
 pulled hi via an internal 50k resistor.
 When the pin is brought low, the program runs the 'shutdown -h now' command.
@@ -46,12 +50,82 @@ It is recommended that a
 the switch connect thru a low-value (e.g.: 200-500 ohm) resistor to
 ground to protect against excessive current in case of a mis-wire.
 
+.TP
+UART vrs SPI
+This feature automatically configures the Raspberry PI to use either the SPI or the UART
+interface, depending on the setting of a hardware pin when the program starts (we only check
+the pin state during startup).
+.br
+IF the pin state has changed since the last startup, The config.txt file is edited to
+enable/disable SPI and the proper QCA7000 driver. It also causes an automatic reboot of
+the system (required for the changes to go into affect).
+
+.TP
+Heartbeat
+A GPIO pin is toggled at a fixed rate, providing a 'heartbeat' indication that
+the system is running.
+
+.SH CONFIGURATION
+All options are controlled by a defaults configuration file (normally
+.BI /etc/defaults/shutdownwatcher)
+.RS 5
+.IP Comments:
+Any ';' or '#' begins a comment, which continues to the end of the line.
+.IP Assignments:
+ <name>=<value>
+.P Assign a <value> to the parameter <name>. Spaces around the <name> and <value> are ignored.
+If a <name> is not specified, then a 'reasonable' default is used. 
+.RS 5
+.TP
+ CONFIGSPI=<string>
+ This defines the name of the SPI version of the /boot/config.txt
+file.
+.br
+.I Default: /boot/config.spi.txt
+.TP
+ CONFIGUART=<string>
+ This defines the name of the UART version of the /boot/config.txt file
+.br
+.I Default: /boot/config.uart.txt
+.TP
+ CONFIGMAIN=<string>
+ This defines the name of the main config.txt file.
+.br
+.I Default: /boot/config.txt
+.TP
+ SHUTDOWN=<gpioPinNo>
+ The GPIO pin number for the shutdown input pin.
+.br
+.I Defualt: 18.
+.TP
+ UARTPIN=<gpioPinNo>
+ The GPIO pin number for the UART/SPI selection input pin. High indicates UART.
+.br
+.I Default: tbd
+.TP
+ LEDPIN=<gpioPinNo>
+ The GPIO pin number for the LED output pin for the heartbeat.
+.br
+.I Default: tbd
+.TP
+ HEARTBEAT=<time>
+ How long (in milliseconds) the Heartbeat is ON, then is OFF. This is 50% duty cycle, so a full
+ cycle will be twice this value.
+.br
+.I Default 500
+(1/2 second)
+
 .SH FILES
 .br
-The binary is in /usr/local/bin.
+The binary is in
+.B /usr/local/bin.
 .br
-The program is a 'systemd' service whose definition is in /etc/systemd/system.
+The program is a 'systemd' service whose definition is in
+.B /etc/systemd/system.
 .br
-The man page is in /usr/share/nan/man1
+The man page is in /usr/share/man/man1
+.br
+The defaults configuration file (if ommitted) defaults to /etc/defaults/shutdownwatcher
+
 .SH AUTHORS
-ShutdownWatcher was Written by Doug Fajardo Nov, 2023.
+ShutdownWatcher was Written by Doug Fajardo Nov, 2022.
