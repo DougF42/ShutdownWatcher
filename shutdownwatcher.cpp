@@ -27,16 +27,28 @@
 
 // IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
+
 #define DEFAULT_FILE_NAME "/etc/defaults/shutdownwatcher"
-// IF defined, we dont actually reboot, but instead put out a stslog message.
-#define TESTMOD
+#define RUN_FILE_NAME "/var/run/shutdownwatcher/status"
+
 
 #define UART_MODE 1
 #define SPI_MODE  0
 using namespace std;
 
-// Line 1 - UART or SPI only.
-#define RUN_FILE_NAME "/var/run/shutdownwatcher/status"
+string fname;
+bool testModeFlag=false;
+
+
+/** @brief help
+ * Outputs command line syntax help
+ */
+void help()
+{
+  printf("THIS IS THE HELP INFO. RTFM, stupid!");
+  return;
+}
+  
 
 /** @brief
  * returns 0 for SPI mode, 1 for UART mode, -1 if any error (not present?)
@@ -78,18 +90,62 @@ void writeRunState(int  state)
 }
 
 
-/**
- * This calls shutdown with the '-h now; argument.
+/** @breif call shutdown and exit
+ * This calls shutdown with the '-h argument, UNLESS the
+ * test mode flag is set. In that case it mearly announces
+ * the call to shutdown and exits the program
  */		  
 void callShutdown(void)
 {
-#ifdef TESTMODE
-  syslog(LOG_DAEMON|LOG_EMERG, "TEST MODE: Shutdown triggered");
-#else
-  syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
-  int stat=system("shutdown -h now");
-#endif
+  if (testModeFlag)
+    {
+      printf("TEST MODE: Shutdown indicated but NOT triggered.\n");
+    }  else
+    {
+      syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
+      system("shutdown -h now");
+    }
+  
   exit(0);
+}
+
+/**
+ * Decode command line arguments.
+ * Only arguments are:
+ *      '-t' (test mode) - output to sysout, announce but do not perform reboot.
+ *      '?'  (get help)
+ *      <filename> Configuration file name. Must not start with a '-' (dash). 
+ *              Default is 'DEFAULT_FILE_NAME' flag.
+ *
+ * WE set the global variables:
+ *    fname (the file name)
+ *    testModeFlag (true if test mode requested)
+ *
+ * Params argc - number of arguments
+ * Param  argv - list of arguments
+ * @return 1 normally, 0 if we need 'help'
+ */
+bool parseCommandLine(int argc, char **argv)
+{
+  fname = DEFAULT_FILE_NAME;
+  testModeFlag=false;
+  if ((argc<=1) || (argc>2))
+    {
+      printf("Wrong number of arguments\n");
+      return (0); // wrong arg count
+    }
+  
+  for (int i=1;  i<argc; i++)
+    {
+      if (0 == strcmp(argv[i],"-t"))
+	{
+	  testModeFlag=true;
+	} else
+	{
+	  fname=argv[i];
+	}
+    }
+  return(1);
 }
 
 
@@ -100,77 +156,90 @@ void callShutdown(void)
  */ 
 int main(int argc, char **argv) {
   syslog(LOG_DAEMON|LOG_EMERG, "Power button watcher started");
-  const char *fname=  DEFAULT_FILE_NAME ;
-  parseDefaults parser;
-  if (argc==2)
-    {
-      if ( 0 == strcmp(argv[2],"?"))
-	{
-	  help();
-	  return(0);
-	} else  {
-	fname = argv[1]; 
-      }
+  if (0==parseCommandLine(argc, argv))
+    {     
+      help();
+      return(1);
     }
-  syslog(LOG_DAEMON|LOG_EMERG, "Parse file %s", fname);          
+
+  parseDefaults parser;
+
+  printf( "Parse file %\n", fname.c_str());          
   parser.begin(fname);
-  syslog(LOG_DAEMON|LOG_EMERG,"Parse complete. Values:");
-  syslog(LOG_DAEMON|LOG_EMERG,"MAIN CONFIG file: %s\n",parse.configtxt_main().c_str() );
-  syslog(LOG_DAEMON|LOG_EMERG,"UART CONFIG file: %s\n",parse.configtxt_uart().c_str() );
-  syslog(LOG_DAEMON|LOG_EMERG,"SPI  CONFIG file: %s\n",parse.configtxt_spi().c_str() );
-  syslog(LOG_DAEMON|LOG_EMERG," \n");
-  syslog(LOG_DAEMON|LOG_EMERG,"Shutdown pin: %d\n",   parse.shutdownPin() );
-  syslog(LOG_DAEMON|LOG_EMERG,"Uart pin: %d\n",       parse.uartPin() );
-  syslog(LOG_DAEMON|LOG_EMERG,"heart Beat pin: %d\n",  parse.heartbeatPin() );
-  syslog(LOG_DAEMON|LOG_EMERG,"heart Rate: %d\n",      parse.heartbeatRate() );	 
-  syslog(LOG_DAEMON|LOG_EMERG,"FINISHED\n\n");
+  
+  printf("Parse complete. Values:\n");
+  printf("MAIN CONFIG file: %s\n",parser.configtxt_main().c_str() );
+  printf("UART CONFIG file: %s\n",parser.configtxt_uart().c_str() );
+  printf("SPI  CONFIG file: %s\n",parser.configtxt_spi().c_str() );
+  printf(" \n");
+  printf("Shutdown pin: %d\n",   parser.shutdownPin() );
+  printf("Uart pin: %d\n",       parser.uartPin() );
+  printf("heart Beat pin: %d\n",  parser.heartbeatPin() );
+  printf("heart Rate: %d\n",      parser.heartbeatRate() );	 
+  printf("FINISHED\n\n");
   
 
   wiringPiSetupGpio();         // Use broadcom GPIO pin numbers
-  pinMode(parse.shutdownpin(), INPUT);   // shut down pin - input
-  pullUpDnControl (parse.shutdownpin(), PUD_UP) ; // set Pull-up 50k resistor
+  pinMode(parser.shutdownPin(), INPUT);   // shut down pin - input
+  pullUpDnControl (parser.shutdownPin(), PUD_UP) ; // set Pull-up 50k resistor
   
-  pinMode(parse.hearbeatPin(), OUTPUT);   // LED PIN - output
-  pullUpDnControl (parse.shutdownpin(), PUD_UP) ; // set Pull-up 50k resistor
+  pinMode(parser.heartbeatPin(), OUTPUT);   // LED PIN - output
+  pullUpDnControl (parser.shutdownPin(), PUD_UP) ; // set Pull-up 50k resistor
   
 
-  pinMode(parse.uartPin(), INPUT); // UART or SPI mode pin - INPUT
-  pullUpDnControl(parse.uartPin(), PUD_UP); 
+  pinMode(parser.uartPin(), INPUT); // UART or SPI mode pin - INPUT
+  pullUpDnControl(parser.uartPin(), PUD_UP); 
   
   // Check and configure UART or SPI mode if changed
+  int curState = digitalRead(parser.uartPin()) == 0; // true if UART
   int oldState = checkRunState();
-  int curState = digitalRead(parse.uartPin()) == 0; // true if UART
-  if ((oldState<0) || (oldState != curState)
+  string cmdStr;
+  if ( oldState != curState)
     {  // change the state 
       if (curState)
 	{ // UART mode
-	  system("cp",parse.configtxt_uart().c_str(), parse.configtxt.main().c_str());
-	  writeRunState(parse.uartPin());
+	  cmdStr="cp ";
+	  cmdStr.append(parser.configtxt_uart().c_str() );
+	  cmdStr.append(" ");
+	  cmdStr.append(parser.configtxt_main().c_str() );
+	  system(cmdStr.c_str() );
+	  //system("cp",parser.configtxt_uart().c_str(), parser.configtxt_main().c_str());
+	  writeRunState(curState);
 	} else {
 	// SPI mode
-	system("cp", parse.configtxt_spi().c_str(),  parse.configtxt.main().c_str());
-	writeRunState(parse.uartPin());
+	  cmdStr="cp ";
+	  cmdStr.append(parser.configtxt_spi().c_str() );
+	  cmdStr.append(" ");
+	  cmdStr.append(parser.configtxt_main().c_str() );	  
+	  system( cmdStr.c_str() );
+	writeRunState(curState);
+      }
+	  
+      callShutdown(); // NOTE: This will exit.
     }
-    // TODO: REBOOT IF ANY CHANGE?
-
   
 #ifdef USE_INTERRUPT
-  wiringPiISR(SHUTDOWN_GPIO_PIN, INT_EDGE_FALLING, callShutdown);
+  wiringPiISR(parser.shutdownPin(),
+	      INT_EDGE_FALLING, callShutdown);
+#endif
+  bool waveToggle=0;
   while(1)
     {
-      sleep(100); // wait for interrupt
-    }
-#else
-  while(1)
-    {
-      if (0 == digitalRead(SHUTDOWN_GPIO_PIN))
+#ifndef USE_INTERRUPT
+      if (0 == digitalRead(parser.shutdownPin()))
 	{
 	  callShutdown();
 	  exit(0);
 	}
-      sleep(1);
-
-    }
 #endif
+      if (waveToggle == 1)
+	{ // turn off the heartbeat
+	  digitalWrite( parser.heartbeatPin(), 0);
+	} else
+	{ // Turn on the heartbeat
+	  digitalWrite( parser.heartbeatPin(), 1);
+	}
+      delay(parser.heartbeatRate() );
+    }
   return 0;
 }
