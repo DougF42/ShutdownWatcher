@@ -25,6 +25,7 @@
 using namespace std;
 
 #ifdef NOT_A_PI
+#define DEFAULT_MODE_FILE       "/tmp/shutdownLastMode.txt"
 #define DEFAULT_UART_FILE       "/boot/config.txt_uart"
 #define DEFAULT_SPI_FILE        "/boot/config.txt_spi"
 #define DEFAULT_CONFIG_TXT      "/boot/config.txt"
@@ -34,7 +35,7 @@ using namespace std;
 #define DEFAULT_HEARTBEAT_RATE  100
 
 #else
-
+#define DEFAULT_MODE_FILE       "/tmp/shutdownLastMode.txt"
 #define DEFAULT_UART_FILE       "/boot/config.txt_uart"
 #define DEFAULT_SPI_FILE        "/boot/config.txt_spi"
 #define DEFAULT_CONFIG_TXT      "/boot/config.txt"
@@ -51,6 +52,7 @@ static const char *WHITESPACE = " \n\r\t\f\v";
  */
 parseDefaults::parseDefaults()
 {
+  config_txt_modeFile    = DEFAULT_MODE_FILE;
   config_txt_uart         = DEFAULT_UART_FILE;
   config_txt_spi          = DEFAULT_SPI_FILE;
   config_txt_main         = DEFAULT_CONFIG_TXT;
@@ -143,7 +145,11 @@ void parseDefaults::setValues(const string pname, const string value, int lineno
     {
       res=CONVNUM(value, pname, lineno);
       config_heartbeat_rate=res;
-    } 
+      
+    } else if (0 == pname.compare("CONFIGMODE"))
+    {
+      config_txt_modeFile.assign(value);
+    }
 
   return;      
 }
@@ -190,6 +196,10 @@ string parseDefaults::configtxt_spi()
   return(config_txt_spi);
 }
 
+string parseDefaults::configtxt_modeFile()
+{
+  return(config_txt_modeFile);
+}
   
 /**
  * @brief PARSE a string for <name>=<value>

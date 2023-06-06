@@ -3,19 +3,20 @@
 // Name of the 'config.txt' file we modify to switch
 // the QCA7000 driver from UART to SPI driver
 // default is /boot/config.txt
-CONFIGSPI="/boot/config.txt_spi"
-CONFIGUART="/boot/config.txt_uart"
-CONFIGMAIN="/boot/config.txt"
+CONFIGSPI=/boot/config.txt_spi
+CONFIGUART=/boot/config.txt_uart
+CONFIGMAIN=/boot/config.txt
+CONFIGMODE=/tmp/runfile.txt
 
 // GPIO Pin number - ground this pin to initiate a shutdown
-SHUTDOWN = 18
+SHUTDOWN = 17
 
 // GPIO Pin number - If low, set up for UART. If high, set for SPI bus.
-UARTPIN  = 12
+UARTPIN  = 19
 
 // GPIO Pin Number - this will be toggled at the HEARTBEAT rate.
-LEDPIN   = 13
+LEDPIN   = 26
 
 // How fast (in milliseconds) to toggle the LEDPIN.
-HEARTBEAT = 50
+HEARTBEAT = 300
 ; end of file

@@ -29,6 +29,7 @@
 #define USE_INTERRUPT
 
 #define DEFAULT_FILE_NAME "/etc/defaults/shutdownwatcher"
+#define DEFAULT_TEST_FILE_NAME "/home/doug/ShutdownWatcher/testdir/testConfigFile.txt"
 #define RUN_FILE_NAME "/var/run/shutdownwatcher/status"
 
 
@@ -36,9 +37,10 @@
 #define SPI_MODE  0
 using namespace std;
 
+
 string fname;
 bool testModeFlag=false;
-
+parseDefaults parser;
 
 /** @brief help
  * Outputs command line syntax help
@@ -56,10 +58,10 @@ void help()
 int checkRunState()
 {
   char buf[5];
-  FILE *file = fopen(RUN_FILE_NAME,"w");
+  FILE *file = fopen(parser.configtxt_modeFile().c_str(),"r");
   if (file == NULL)
     {
-      // TODO: error!;
+      return(-1); // no file
     }
   size_t cnt=fread(buf, 1, 5, file);
   fclose(file);
@@ -76,15 +78,16 @@ int checkRunState()
  */
 void writeRunState(int  state)
 {
-  FILE *file = fopen(RUN_FILE_NAME,"w");
+  FILE *file = fopen(parser.configtxt_modeFile().c_str(),"w");
   if (file == NULL) return; // do nothing on error
   
   if (state == UART_MODE)
     {
       fprintf(file,"UART\n");
-    }  else {
-    fprintf(file,"SPI.\n");  
-  }
+    }  else
+    {
+      fprintf(file,"SPI\n");
+    }
   fclose(file);
   return;
 }
@@ -129,7 +132,7 @@ bool parseCommandLine(int argc, char **argv)
 {
   fname = DEFAULT_FILE_NAME;
   testModeFlag=false;
-  if ((argc<=1) || (argc>2))
+  if ((argc<=1) || (argc>3))
     {
       printf("Wrong number of arguments\n");
       return (0); // wrong arg count
@@ -140,6 +143,7 @@ bool parseCommandLine(int argc, char **argv)
       if (0 == strcmp(argv[i],"-t"))
 	{
 	  testModeFlag=true;
+	  fname= DEFAULT_TEST_FILE_NAME ;
 	} else
 	{
 	  fname=argv[i];
@@ -155,14 +159,14 @@ bool parseCommandLine(int argc, char **argv)
  * file (default: /etc/default/shutdownwatcher)
  */ 
 int main(int argc, char **argv) {
-  syslog(LOG_DAEMON|LOG_EMERG, "Power button watcher started");
+  printf("Power button watcher started");
   if (0==parseCommandLine(argc, argv))
     {     
       help();
       return(1);
     }
 
-  parseDefaults parser;
+
 
   printf( "Parse file %\n", fname.c_str());          
   parser.begin(fname);
@@ -171,6 +175,7 @@ int main(int argc, char **argv) {
   printf("MAIN CONFIG file: %s\n",parser.configtxt_main().c_str() );
   printf("UART CONFIG file: %s\n",parser.configtxt_uart().c_str() );
   printf("SPI  CONFIG file: %s\n",parser.configtxt_spi().c_str() );
+  printf("RUN file is:      %s\n",parser.configtxt_modeFile().c_str());
   printf(" \n");
   printf("Shutdown pin: %d\n",   parser.shutdownPin() );
   printf("Uart pin: %d\n",       parser.uartPin() );
@@ -198,23 +203,34 @@ int main(int argc, char **argv) {
     {  // change the state 
       if (curState)
 	{ // UART mode
-	  cmdStr="cp ";
-	  cmdStr.append(parser.configtxt_uart().c_str() );
-	  cmdStr.append(" ");
-	  cmdStr.append(parser.configtxt_main().c_str() );
-	  system(cmdStr.c_str() );
-	  //system("cp",parser.configtxt_uart().c_str(), parser.configtxt_main().c_str());
-	  writeRunState(curState);
+	  if (testModeFlag)
+	    {
+	      printf("IN TEST MODE - would have set UART MODE\n");
+	    } else
+	    {
+	      cmdStr="cp ";
+	      cmdStr.append(parser.configtxt_uart().c_str() );
+	      cmdStr.append(" ");
+	      cmdStr.append(parser.configtxt_main().c_str() );
+	      system(cmdStr.c_str() );
+	    }
+
 	} else {
 	// SPI mode
-	  cmdStr="cp ";
-	  cmdStr.append(parser.configtxt_spi().c_str() );
-	  cmdStr.append(" ");
-	  cmdStr.append(parser.configtxt_main().c_str() );	  
-	  system( cmdStr.c_str() );
-	writeRunState(curState);
+	if (testModeFlag)
+	  {
+	    printf("IN TEST MODE - would have set SPI mode\n");
+	  } else
+	  {
+	    cmdStr="cp ";
+	    cmdStr.append(parser.configtxt_spi().c_str() );
+	    cmdStr.append(" ");
+	    cmdStr.append(parser.configtxt_main().c_str() );	  
+	    system( cmdStr.c_str() );
+	  }
+
       }
-	  
+      writeRunState(curState);	  
       callShutdown(); // NOTE: This will exit.
     }
   
@@ -235,9 +251,11 @@ int main(int argc, char **argv) {
       if (waveToggle == 1)
 	{ // turn off the heartbeat
 	  digitalWrite( parser.heartbeatPin(), 0);
+	  waveToggle=0;
 	} else
 	{ // Turn on the heartbeat
 	  digitalWrite( parser.heartbeatPin(), 1);
+	  waveToggle=1;
 	}
       delay(parser.heartbeatRate() );
     }

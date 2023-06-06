@@ -24,6 +24,7 @@ class parseDefaults{
   string config_txt_uart;   // Name of the config.txt file for UART
   string config_txt_spi;    // Name of the config.txt file for SPI
   string config_txt_main;   // Name of the resulting config.txt file
+  string config_txt_modeFile; // Name of the file where we remember the last mode
   
   void setValues(const string pname, const string value, int lineno);
   
@@ -43,5 +44,6 @@ class parseDefaults{
   string configtxt_uart();
   string configtxt_spi();
   string configtxt_main();
+  string configtxt_modeFile();
 };
 #endif
