@@ -1,18 +1,34 @@
 # Shutdown watcher
-## General
-This does an auto-shutdown if a button is pressed.
-it USES the wiringpi (see _required_ below) library Interrupt functions.
+# # General
+This program has 3 purposes:
+* This does an auto-shutdown if a button is pressed (GPIO 11).
+* This looks at GPIO pin x when the program starts, and configureds the PI
+for either UART or SPI operation. This will also force a reboot.
+* This provides a heartbeat on an output pin
 
-## Notes:
+# # default config file
+* The command line supports one argument - the name of a 'defaults' configuration
+file (do NOT confuse with the /boot/config.txt file that we may modify).
+* This file is (by default) /etc/defaults/shutdownwatcher.
+* It contains the a series of assignments in the form of:
+  `<parameter>=<value>`
+
+* It allows spaces around the '=', and before or after the value.
+* The ';' and '#' characters indicate the start of a comment,
+which always extends to the end of the current line
+
+
+
+# # Notes:
 TEMP and voltage MONITOR: vcgencmd.
 git clone https://github.com/raspberrypi/userland.git	
 cd userland
 ./buildme --aarch64
 
-## SWITCH:
-SWITCH connection:  Normally open, ground thru a 1k resistor. The processor
+# # SWITCH:
+SWITCH connection:  Normally open, pull up? thru a 1k resistor. The processor
 is programmed with an internal pull up resistor.
-The first argument is the switch's GPIO number. Default is 18.
+The first argument is the switch's GPIO number. Default is 11.
 
 ## Logic/operation:
   Sets the SWITCH pin to input, pulled high with internal pull-up resistor.
@@ -25,10 +41,14 @@ The first argument is the switch's GPIO number. Default is 18.
   '/usr/local/bin/ShutdownWatcher&'
   
 ## Required:
-(1) CMAKE is required to compile (but not to run the compiled program)
-* comand:  "sudo apt-get cmake"
 
-(2) WiringPi is required to run the program. To install it:
+(1) CMAKE is required to compile (but not to run the compiled program)
+* comand:  "sudo apt-get install cmake"
+
+   cmake-curses-gui (apt-get install cmake-curses-gui)
+
+(2) WiringPi is required to run the program. To install it:   
+   Download WiringPi and install it:
 
     (1) wget https://project-downloads.drogon.net/wiringpi-latest.deb
     (2) dpkg -i wiringpi-latest.deb

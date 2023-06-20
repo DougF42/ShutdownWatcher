@@ -28,6 +28,9 @@ echo "Installing binary"
 # Copy the binary
 cp build/shutdownwatcher ${BINDIR}
 
+# Copy the /etc/default/shutdown file
+cp shutdownwatcher_cfg_sample /etc/default/shutdown
+
 # Copy the systemd config file
 #cp shutdownwatcher.service ${SYSTEMD}/
 echo installing system control files

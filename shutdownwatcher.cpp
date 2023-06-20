@@ -1,68 +1,263 @@
 /**
+ * (1) Shutdown function:
  * We watch for a button press - if seen, then
  * we call the 'shutdown' program and quit.
  *
- * This uses wiring pi library - see 'http://wiringpi.com'
+ * (2) Change between SPI and UART mode (On program startup):
+ *   This goes out and enables/disables the dtparam=spi=on as needed,
+ *    and also the enable_uart=1)
  *
- * Uses the 'interrupt' features!
+ * (3) Heartbeat function. Once per second
+ *
+ * CONFIG:
+ *   
+ *
+ * This uses wiring pi library - see 'http://wiringpi.com', including the 'interrupt' features!
  */
 
 #include <stdio.h>
 #include <syslog.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <wiringPi.h>
+#include <time.h>
+#include "parseDefaults.h"
 
 
-//IF defined, we wait for an interrupt.
+// IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
-// #define TESTMODE
 
-// default GPIO pin
-//#define DEF_SWITCH 14
-#define DEF_SWITCH 18
+#define DEFAULT_FILE_NAME "/etc/defaults/shutdownwatcher"
+#define DEFAULT_TEST_FILE_NAME "/home/doug/ShutdownWatcher/testdir/testConfigFile.txt"
+#define RUN_FILE_NAME "/var/run/shutdownwatcher/status"
 
+
+#define UART_MODE 1
+#define SPI_MODE  0
 using namespace std;
 
-/**
- * This calls shutdown with the '-h now; argument.
+
+string fname;
+bool testModeFlag=false;
+parseDefaults parser;
+
+/** @brief help
+ * Outputs command line syntax help
  */
+void help()
+{
+  printf("THIS IS THE HELP INFO. RTFM, stupid!");
+  return;
+}
+  
+
+/** @brief
+ * returns 0 for SPI mode, 1 for UART mode, -1 if any error (not present?)
+ */
+int checkRunState()
+{
+  char buf[5];
+  FILE *file = fopen(parser.configtxt_modeFile().c_str(),"r");
+  if (file == NULL)
+    {
+      return(-1); // no file
+    }
+  size_t cnt=fread(buf, 1, 5, file);
+  fclose(file);
+  if (cnt !=5) return(-1);
+  buf[4] = '\0';
+  if (0 == strcmp(buf,"UART")) return(UART_MODE);
+  if (0 == strcmp(buf,"SPI.")) return(SPI_MODE);
+  return(-1);
+}
+
+/**
+ * Writes the current state to the run file
+ * @param state 0 for SPI mode, 1 for UART mode.
+ */
+void writeRunState(int  state)
+{
+  FILE *file = fopen(parser.configtxt_modeFile().c_str(),"w");
+  if (file == NULL) return; // do nothing on error
+  
+  if (state == UART_MODE)
+    {
+      fprintf(file,"UART\n");
+    }  else
+    {
+      fprintf(file,"SPI\n");
+    }
+  fclose(file);
+  return;
+}
+
+
+/** @breif call shutdown and exit
+ * This calls shutdown with the '-h argument, UNLESS the
+ * test mode flag is set. In that case it mearly announces
+ * the call to shutdown and exits the program
+ */		  
 void callShutdown(void)
 {
-  #ifdef TESTMODE
-  syslog(LOG_DAEMON|LOG_EMERG, "TEST MODE: Shutdown triggered");
-  #else
-  syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
-  int stat=system("shutdown -h now");
-  #endif
+  if (testModeFlag)
+    {
+      printf("TEST MODE: Shutdown indicated but NOT triggered.\n");
+    }  else
+    {
+      syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
+      system("shutdown -h now");
+    }
+  
   exit(0);
 }
 
-int main(int argc, char **argv) {
-  int switchno = DEF_SWITCH;
-//  	printf( "Hello world");
-  syslog(LOG_DAEMON|LOG_EMERG, "Power button watcher started");
-	wiringPiSetupGpio();   // Use broadcom GPIO pin numbers
-	pinMode(switchno, INPUT);  // set switch to input mode
-	pullUpDnControl (switchno, PUD_UP) ; // set Pull-up 50k resistor
-	syslog(LOG_DAEMON|LOG_EMERG, "GPIO configured");
-#ifdef USE_INTERRUPT
-	wiringPiISR(switchno, INT_EDGE_FALLING, callShutdown);
-	while(1)
-	  {
-	    sleep(100); // wait for interrupt
-	  }
-#else
-	while(1)
+/**
+ * Decode command line arguments.
+ * Only arguments are:
+ *      '-t' (test mode) - output to sysout, announce but do not perform reboot.
+ *      '?'  (get help)
+ *      <filename> Configuration file name. Must not start with a '-' (dash). 
+ *              Default is 'DEFAULT_FILE_NAME' flag.
+ *
+ * WE set the global variables:
+ *    fname (the file name)
+ *    testModeFlag (true if test mode requested)
+ *
+ * Params argc - number of arguments
+ * Param  argv - list of arguments
+ * @return 1 normally, 0 if we need 'help'
+ */
+bool parseCommandLine(int argc, char **argv)
+{
+  fname = DEFAULT_FILE_NAME;
+  testModeFlag=false;
+  if ((argc<=1) || (argc>3))
+    {
+      printf("Wrong number of arguments\n");
+      return (0); // wrong arg count
+    }
+  
+  for (int i=1;  i<argc; i++)
+    {
+      if (0 == strcmp(argv[i],"-t"))
 	{
-		if (0 == digitalRead(switchno))
-		{
-			callShutdown();
-			exit(0);
-		}
-		sleep(1);
+	  testModeFlag=true;
+	  fname= DEFAULT_TEST_FILE_NAME ;
+	} else
+	{
+	  fname=argv[i];
+	}
+    }
+  return(1);
+}
 
+
+/**
+ * MAIN entry point.
+ * IF present, the first argument is the configuration 
+ * file (default: /etc/default/shutdownwatcher)
+ */ 
+int main(int argc, char **argv) {
+  printf("Power button watcher started");
+  if (0==parseCommandLine(argc, argv))
+    {     
+      help();
+      return(1);
+    }
+
+
+
+  printf( "Parse file %\n", fname.c_str());          
+  parser.begin(fname);
+  
+  printf("Parse complete. Values:\n");
+  printf("MAIN CONFIG file: %s\n",parser.configtxt_main().c_str() );
+  printf("UART CONFIG file: %s\n",parser.configtxt_uart().c_str() );
+  printf("SPI  CONFIG file: %s\n",parser.configtxt_spi().c_str() );
+  printf("RUN file is:      %s\n",parser.configtxt_modeFile().c_str());
+  printf(" \n");
+  printf("Shutdown pin: %d\n",   parser.shutdownPin() );
+  printf("Uart pin: %d\n",       parser.uartPin() );
+  printf("heart Beat pin: %d\n",  parser.heartbeatPin() );
+  printf("heart Rate: %d\n",      parser.heartbeatRate() );	 
+  printf("FINISHED\n\n");
+  
+
+  wiringPiSetupGpio();         // Use broadcom GPIO pin numbers
+  pinMode(parser.shutdownPin(), INPUT);   // shut down pin - input
+  pullUpDnControl (parser.shutdownPin(), PUD_UP) ; // set Pull-up 50k resistor
+  
+  pinMode(parser.heartbeatPin(), OUTPUT);   // LED PIN - output
+  pullUpDnControl (parser.shutdownPin(), PUD_UP) ; // set Pull-up 50k resistor
+  
+
+  pinMode(parser.uartPin(), INPUT); // UART or SPI mode pin - INPUT
+  pullUpDnControl(parser.uartPin(), PUD_UP); 
+  
+  // Check and configure UART or SPI mode if changed
+  int curState = digitalRead(parser.uartPin()) == 0; // true if UART
+  int oldState = checkRunState();
+  string cmdStr;
+  if ( oldState != curState)
+    {  // change the state 
+      if (curState)
+	{ // UART mode
+	  if (testModeFlag)
+	    {
+	      printf("IN TEST MODE - would have set UART MODE\n");
+	    } else
+	    {
+	      cmdStr="cp ";
+	      cmdStr.append(parser.configtxt_uart().c_str() );
+	      cmdStr.append(" ");
+	      cmdStr.append(parser.configtxt_main().c_str() );
+	      system(cmdStr.c_str() );
+	    }
+
+	} else {
+	// SPI mode
+	if (testModeFlag)
+	  {
+	    printf("IN TEST MODE - would have set SPI mode\n");
+	  } else
+	  {
+	    cmdStr="cp ";
+	    cmdStr.append(parser.configtxt_spi().c_str() );
+	    cmdStr.append(" ");
+	    cmdStr.append(parser.configtxt_main().c_str() );	  
+	    system( cmdStr.c_str() );
+	  }
+
+      }
+      writeRunState(curState);	  
+      callShutdown(); // NOTE: This will exit.
+    }
+  
+#ifdef USE_INTERRUPT
+  wiringPiISR(parser.shutdownPin(),
+	      INT_EDGE_FALLING, callShutdown);
+#endif
+  bool waveToggle=0;
+  while(1)
+    {
+#ifndef USE_INTERRUPT
+      if (0 == digitalRead(parser.shutdownPin()))
+	{
+	  callShutdown();
+	  exit(0);
 	}
 #endif
-	return 0;
+      if (waveToggle == 1)
+	{ // turn off the heartbeat
+	  digitalWrite( parser.heartbeatPin(), 0);
+	  waveToggle=0;
+	} else
+	{ // Turn on the heartbeat
+	  digitalWrite( parser.heartbeatPin(), 1);
+	  waveToggle=1;
+	}
+      delay(parser.heartbeatRate() );
+    }
+  return 0;
 }
