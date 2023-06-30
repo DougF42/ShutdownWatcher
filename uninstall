@@ -5,10 +5,16 @@
 #
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
-#SYSTEMD=/etc/systemd/system/
+SYSTEMD=/etc/systemd/system
 
 # remove command, ignore errors, force if directory.
 RM='rm -rf'
+
+# STOP the service
+
+systemctl disable shutdownwatcher.service
+systemctl stop    shutdownwatcher.service
+${RM} ${SYSTEMD}/Shutdownwatcher.service
 
 # Copy the man page
 if [ -f ${MANPAGES}/shutdownwatcher.1 ]; then
@@ -25,8 +31,4 @@ ${RM} /etc/default/shutdown
 echo "Removing binary and service file"
 ${RM} ${BINDIR}shutdownwatcher
 
-# remove the systemd config files
-${RM} /etc/init.d/shutdownwatcher
-update-rc.d shutdownwatcher remove
-echo "uninstall complete"
 

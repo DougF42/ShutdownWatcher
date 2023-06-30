@@ -5,7 +5,6 @@
 #
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
-#SYSTEMD=/etc/init.d
 SYSTEMD=/etc/systemd/system
 
 if [ ! -d testdir ]; then
@@ -34,9 +33,7 @@ cp shutdownwatcher_cfg_sample /etc/default/shutdown
 echo installing system control files
 cp shutdownwatcher.service ${SYSTEMD}/
 
-cp shutdownwatcher.99 /etc/init.d/shutdownwatcher
 sudo systemctl daemon-reload
-# update-rc.d shutdownwatcher  defaults
-# update-rc.d shutdownwatcher  defaults-disabled
 systemctl enable shutdownwatcher.service
+systemctl start shutdownwatcher.service
 echo "Install complete"
