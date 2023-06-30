@@ -24,6 +24,8 @@
 #include <time.h>
 #include "parseDefaults.h"
 
+// if true, then we log to syslog
+#define USE_SYSLOG
 
 // IF defined, we wait for an interrupt.
 #define USE_INTERRUPT
@@ -37,7 +39,13 @@
 #define SPI_MODE  0
 using namespace std;
 
-
+#ifdef USE_SYSLOG
+#define PRINT(_fmt) syslog(LOG_INFO| LOG_DAEMON, _fmt,
+#define PRINTF(_fmt) syslog(LOG_INFO|LOG_DAEMON, _fmt)
+#else
+#define PRINT(_fmt) printf(_fmt,
+#define PRINTF(_fmt) printf(_fmt)
+#endif
 string fname;
 bool testModeFlag=false;
 parseDefaults parser;
@@ -102,7 +110,7 @@ void callShutdown(void)
 {
   if (testModeFlag)
     {
-      printf("TEST MODE: Shutdown indicated but NOT triggered.\n");
+      PRINTF("TEST MODE: Shutdown indicated but NOT triggered.\n");
     }  else
     {
       syslog(LOG_DAEMON|LOG_EMERG, "Shutdown button pushed. shutting down",NULL);
@@ -132,12 +140,13 @@ bool parseCommandLine(int argc, char **argv)
 {
   fname = DEFAULT_FILE_NAME;
   testModeFlag=false;
-  if ((argc<=1) || (argc>3))
+  if ((argc<=0) || (argc>3))
     {
-      printf("Wrong number of arguments\n");
+      PRINTF("Wrong number of arguments\n");
       return (0); // wrong arg count
     }
-  
+
+  if ((argc>1) && (0==strcmp(argv[1],"?"))) return(0); // help
   for (int i=1;  i<argc; i++)
     {
       if (0 == strcmp(argv[i],"-t"))
@@ -159,29 +168,31 @@ bool parseCommandLine(int argc, char **argv)
  * file (default: /etc/default/shutdownwatcher)
  */ 
 int main(int argc, char **argv) {
-  printf("Power button watcher started");
+  #ifdef USE_SYSLOG
+  openlog("SHUTDOWNWATCHER",LOG_NOWAIT, LOG_DAEMON);
+  
+  #endif
+  PRINTF("Power button watcher started\n");
   if (0==parseCommandLine(argc, argv))
     {     
       help();
       return(1);
     }
 
-
-
-  printf( "Parse file %\n", fname.c_str());          
+  PRINT("Parse file %s\n") fname.c_str());
   parser.begin(fname);
   
-  printf("Parse complete. Values:\n");
-  printf("MAIN CONFIG file: %s\n",parser.configtxt_main().c_str() );
-  printf("UART CONFIG file: %s\n",parser.configtxt_uart().c_str() );
-  printf("SPI  CONFIG file: %s\n",parser.configtxt_spi().c_str() );
-  printf("RUN file is:      %s\n",parser.configtxt_modeFile().c_str());
-  printf(" \n");
-  printf("Shutdown pin: %d\n",   parser.shutdownPin() );
-  printf("Uart pin: %d\n",       parser.uartPin() );
-  printf("heart Beat pin: %d\n",  parser.heartbeatPin() );
-  printf("heart Rate: %d\n",      parser.heartbeatRate() );	 
-  printf("FINISHED\n\n");
+  PRINTF("Parse complete. Values:\n");
+  PRINT("MAIN CONFIG file: %s\n") parser.configtxt_main().c_str());
+PRINT("UART CONFIG file: %s\n") parser.configtxt_uart().c_str() );
+PRINT("SPI  CONFIG file: %s\n") parser.configtxt_spi().c_str() );
+PRINT("RUN file is:      %s\n") parser.configtxt_modeFile().c_str());
+PRINTF(" \n");
+PRINT("Shutdown pin: %d\n")   parser.shutdownPin() );
+PRINT("Uart pin: %d\n")       parser.uartPin() );
+PRINT("heart Beat pin: %d\n")  parser.heartbeatPin() );
+PRINT("heart Rate: %d\n")      parser.heartbeatRate() );	 
+PRINTF("----\n\n");
   
 
   wiringPiSetupGpio();         // Use broadcom GPIO pin numbers
@@ -205,9 +216,10 @@ int main(int argc, char **argv) {
 	{ // UART mode
 	  if (testModeFlag)
 	    {
-	      printf("IN TEST MODE - would have set UART MODE\n");
+	      PRINTF("IN TEST MODE - would have set UART MODE\n");
 	    } else
 	    {
+	      PRINTF("SETTING UART MODE");
 	      cmdStr="cp ";
 	      cmdStr.append(parser.configtxt_uart().c_str() );
 	      cmdStr.append(" ");
@@ -219,9 +231,10 @@ int main(int argc, char **argv) {
 	// SPI mode
 	if (testModeFlag)
 	  {
-	    printf("IN TEST MODE - would have set SPI mode\n");
+	    PRINTF("IN TEST MODE - would have set SPI mode\n");
 	  } else
 	  {
+	    PRINTF("SETTING SPI MODE");
 	    cmdStr="cp ";
 	    cmdStr.append(parser.configtxt_spi().c_str() );
 	    cmdStr.append(" ");

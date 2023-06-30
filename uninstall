@@ -7,7 +7,7 @@ BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
 #SYSTEMD=/etc/systemd/system/
 
-// remove command, ignore errors, force if directory.
+# remove command, ignore errors, force if directory.
 RM='rm -rf'
 
 # Copy the man page

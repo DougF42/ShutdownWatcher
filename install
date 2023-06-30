@@ -5,19 +5,18 @@
 #
 BINDIR=/usr/local/bin/
 MANPAGES=/usr/share/man/man1
-SYSTEMD=/etc/init.d
+#SYSTEMD=/etc/init.d
+SYSTEMD=/etc/systemd/system
 
-if [ ! -d build ]; then
+if [ ! -d testdir ]; then
     echo "This script MUST be run from the 'shutdownWatcher' program directory"
     exit 1
 fi
 
-cd build && cmake .. && make
+cmake . && make
 if [ $? -ne 0 ]; then
     echo "Bad return from build. Install aborted."
 fi
-
-cd ..
 
 # Copy the man page and update the database
 echo "installing man page"
@@ -26,15 +25,18 @@ mandb -q
 
 echo "Installing binary"
 # Copy the binary
-cp build/shutdownwatcher ${BINDIR}
+cp shutdownwatcher ${BINDIR}
 
 # Copy the /etc/default/shutdown file
 cp shutdownwatcher_cfg_sample /etc/default/shutdown
 
 # Copy the systemd config file
-#cp shutdownwatcher.service ${SYSTEMD}/
 echo installing system control files
+cp shutdownwatcher.service ${SYSTEMD}/
+
 cp shutdownwatcher.99 /etc/init.d/shutdownwatcher
-update-rc.d shutdownwatcher  defaults
-update-rc.d shutdownwatcher  defaults-disabled
+sudo systemctl daemon-reload
+# update-rc.d shutdownwatcher  defaults
+# update-rc.d shutdownwatcher  defaults-disabled
+systemctl enable shutdownwatcher.service
 echo "Install complete"
