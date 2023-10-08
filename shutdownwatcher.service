@@ -3,11 +3,13 @@
 [Unit]
 Description=Shutdown button watching pin 14.
 After=syslog.service
+
 [Service]
-KillMode=mixed
-ExecStart=/usr/local/bin/shutdownwatcher
 Type=simple
 Restart=always
+KillMode=mixed
+ExecStart=/usr/local/bin/shutdownwatcher
+
 [Install]
 Alias=shut.service
 
